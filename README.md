@@ -10,7 +10,7 @@ This code is tuned for identifying chemical entity mention in patents (task spec
 **cd code/** <br />
 **th main.lua** <br />
 <br />
-*To get help of configurable parameters of the model,* <br />
+*To know configurable parameters of the model,* <br />
 **th main.lua -help** <br />
 <br />
 *Prerequisites to run:* <br />
