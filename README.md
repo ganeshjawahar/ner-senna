@@ -7,8 +7,8 @@ This code is tuned for identifying chemical entity mention in patents (task spec
 
 To execute it,
 
-cd code/
-th main.lua
+cd code/ <br />
+th main.lua <br />
 
 To get help of configuruable parameters of the model,
 th main.lua -help
