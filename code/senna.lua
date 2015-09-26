@@ -116,7 +116,8 @@ function Senna:train()
 			end
 		end
 		if #self.batch~=0 then
-			optim.sgd(feval,params,optim_state)
+			local _,loss=optim.sgd(feval,params,optim_state)
+			local train_loss = loss[1]
 			epoch_loss=epoch_loss+train_loss
 			iteration=iteration+1
 		end

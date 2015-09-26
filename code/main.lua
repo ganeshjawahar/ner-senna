@@ -55,4 +55,4 @@ end
 model=Senna(params)
 model:train()
 --model:compute_dev_score()
---model:compute_test_result()
+model:compute_test_result()
