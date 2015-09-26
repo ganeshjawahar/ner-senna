@@ -5,14 +5,16 @@ R. Collobert, J. Weston, L. Bottou, M. Karlen, K. Kavukcuoglu and P. Kuksa. Natu
 
 This code is tuned for identifying chemical entity mention in patents (task specified in http://www.biocreative.org/tasks/biocreative-v/cemp-detailed-task-description/)
 <br />
+<br />
+
 *To execute it,* <br />
 **cd code/** <br />
 **th main.lua** <br />
 <br />
-To get help of configuruable parameters of the model, <br />
+*To get help of configuruable parameters of the model,* <br />
 **th main.lua -help** <br />
 <br />
-Prerequisites to run: <br />
+*Prerequisites to run:* <br />
 1. Torch 7 <br />
 2. nn <br />
 3. optim <br />
