@@ -1,18 +1,17 @@
-Entity Mention Detection using SENNA
+Entity Mention Detection using SENNA<br />
 
 This is Torch implementation of the SENNA system introduced in the following paper:
-R. Collobert, J. Weston, L. Bottou, M. Karlen, K. Kavukcuoglu and P. Kuksa. Natural Language Processing (Almost) from Scratch, Journal of Machine Learning Research (JMLR), 2011. 
+R. Collobert, J. Weston, L. Bottou, M. Karlen, K. Kavukcuoglu and P. Kuksa. Natural Language Processing (Almost) from Scratch, Journal of Machine Learning Research (JMLR), 2011. <br />
 
 This code is tuned for identifying chemical entity mention in patents (task specified in http://www.biocreative.org/tasks/biocreative-v/cemp-detailed-task-description/)
-
-To execute it,
-
+<br />
+To execute it, <br />
 cd code/ <br />
 th main.lua <br />
-
-To get help of configuruable parameters of the model,
-th main.lua -help
-
+<br />
+To get help of configuruable parameters of the model, <br />
+th main.lua -help <br />
+<br />
 Prerequisites to run:
 1. Torch 7 <br />
 2. nn <br />
