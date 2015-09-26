@@ -20,5 +20,6 @@ This code is tuned for identifying chemical entity mention in patents (task spec
 4. xlua <br />
 5. cunn (if you are running in a gpu) <br />
 Packages [2-5] can be installed using Luarocks. <br />
-For examples, to install nn, <br />
+For example,<br />
+*To install nn,* <br />
 luarocks install nn <br />
