@@ -14,11 +14,11 @@ To get help of configuruable parameters of the model,
 th main.lua -help
 
 Prerequisites to run:
-1. Torch 7
-2. nn
-3. optim
-4. xlua
-5. cunn (if you are running in a gpu)
-Packages [2-6] can be installed using Luarocks.
-For examples, to install nn,
-luarocks install nn
+1. Torch 7 <br />
+2. nn <br />
+3. optim <br />
+4. xlua <br />
+5. cunn (if you are running in a gpu) <br />
+Packages [2-6] can be installed using Luarocks. <br />
+For examples, to install nn, <br />
+luarocks install nn <br />
