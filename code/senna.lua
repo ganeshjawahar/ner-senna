@@ -83,7 +83,7 @@ function Senna:train()
 	end	
 
 	self.batch={}
-	utils.loadDevCorpus(self)
+	--utils.loadDevCorpus(self)
 	for epoch=1,self.max_epochs do
 		print('Epoch '..epoch..' ...')
 		local epoch_start=sys.clock()
@@ -121,7 +121,7 @@ function Senna:train()
 			iteration=iteration+1
 		end
 		xlua.progress(self.corpus_size,self.corpus_size)
-		self:compute_dev_result()
+		-- self:compute_dev_result()
 		print(string.format("Epoch %d done in %.2f minutes. loss=%f\n\n",epoch,((sys.clock()-epoch_start)/60),(epoch_loss/iteration)))
 	end
 	print(string.format("Done in %.2f seconds.",sys.clock()-start))

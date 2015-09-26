@@ -4,15 +4,20 @@ from nltk.tokenize import sent_tokenize
 from nltk.tokenize import word_tokenize
 import sys
 
-train_set_label='../cemp_training_set/chemdner_cemp_gold_standard_train.tsv'
-train_set_text='../cemp_training_set/chemdner_patents_train_text.txt'
-dev_set_label='../cemp_development_set_v03/chemdner_cemp_gold_standard_development_v03.tsv'
-dev_set_text='../cemp_development_set_v03/chemdner_patents_development_text.txt'
-test_set_text='/home/ganesh/Desktop/TIR/ravindra/test.set'
+train_set_label='../data/raw/train/chemdner_cemp_gold_standard_train.tsv'
+train_set_text='../data/raw/train/chemdner_patents_train_text.txt'
+dev_set_label='../data/raw/dev/chemdner_cemp_gold_standard_development_v03.tsv'
+dev_set_text='../data/raw/dev/chemdner_patents_development_text.txt'
+test_set_text='../data/raw/test/test.set'
+new_train_file='../data/preprocessed/train.tsv'
+new_dev_file='../data/preprocessed/dev.tsv'
+new_test_file='../data/preprocessed/test.tsv'
 
 def preprocess1(label_file,text_file,dest_file):
 	#Read the label file
 	label_map={}
+	title_ents=0
+	abs_ents=0	
 	with open(label_file,"r") as ins:
 		array=[]
 		for line in ins:
@@ -20,10 +25,14 @@ def preprocess1(label_file,text_file,dest_file):
 			if content[0] not in label_map:
 				label_map[content[0]]=[]
 			label_map[content[0]].append(content[1]+':'+content[4])
-	print(len(label_map))
+			if content[1]=='T':
+				title_ents=title_ents+1
+			else:
+				abs_ents=abs_ents+1
+	print('#chemical entities : '+str(title_ents+abs_ents))
 	#Read the text file
 	title_map={}
-	text_map={}
+	abs_map={}
 	id_map={}
 	with open(text_file,"r") as ins:
 		array=[]
@@ -32,8 +41,8 @@ def preprocess1(label_file,text_file,dest_file):
 			content=line.strip().split('\t')
 			if content[0] not in title_map:
 				title_map[content[0]]=content[1]
-			if content[0] not in text_map:
-				text_map[content[0]]=content[2]
+			if content[0] not in abs_map:
+				abs_map[content[0]]=content[2]
 			id_map[row]=content[0]
 			row=row+1
 	#Tokenize the corpus
@@ -44,20 +53,20 @@ def preprocess1(label_file,text_file,dest_file):
 	for i in range(len(id_map)):
 		p_id=id_map[i]
 		title=title_map[p_id]
-		text=text_map[p_id]
+		text=abs_map[p_id]
 		labels=[]
 		if p_id in label_map:
 			labels=label_map[p_id]
 		line=p_id+'\n'
 		try:
-			#abstract
-			out,laec=embed_labels_a_line(title,'A',labels)
-			line+=out+'\n'
-			aec+=laec
-			#text
-			out,ltec=embed_labels_mul_line(text,'T',labels)
+			#title
+			out,ltec=embed_labels_a_line(title,'T',labels)
 			line+=out+'\n'
 			tec+=ltec
+			#abstract
+			out,laec=embed_labels_mul_line(text,'A',labels)
+			line+=out+'\n'
+			aec+=laec
 			res_file.write(line)
 		except UnicodeDecodeError:
 			err=err+1
@@ -66,9 +75,11 @@ def preprocess1(label_file,text_file,dest_file):
 			sys.exit(0)
 	res_file.close()
 
-	print('#lines with unicode errors: '+str(err))
-	print('#total abstract entites found: '+str(aec))
-	print('#total text entites found: '+str(tec))
+	print('#patents: '+str(len(abs_map)))
+	print('#patents with atleast one entity mention: '+str(len(label_map)))
+	print('#patents with unicode errors: '+str(err))
+	print('#title unigram entities found: '+str(tec)+' out of '+str(title_ents)+' ngram entities')
+	print('#abstract unigram entities found: '+str(aec)+' out of '+str(abs_ents)+' ngram entities')
 
 def get_mentions(full_text,typ,labels):
 	chem_mentions=[]
@@ -83,7 +94,7 @@ def get_word_label(target_word,chem_mentions):
 	if len(chem_mentions)==0:
 		return target_word+'$$$O'
 	for mention in chem_mentions:
-		if target_word.startswith(mention):
+		if target_word in mention:
 			return target_word+'$$$I'
 	return target_word+'$$$O'
 
@@ -138,14 +149,11 @@ def preprocess_2(text_file,dest_file):
 			except UnicodeDecodeError:
 				err=err+1
 	res_file.close()
-	print('#Lines with unicode errros: '+str(err))
+	print('#Lines with unicode errors: '+str(err))
 
-
-#preprocess1(train_set_label,train_set_text,'../data/train.tsv')
-#preprocess1(dev_set_label,dev_set_text,'../data/dev.tsv')
-preprocess_2(test_set_text,'../data/test.tsv')
-
-text="this is a sentence. i am ganesh."
-sent_tokenize_list=sent_tokenize(text)
-print(sent_tokenize_list)
-print(word_tokenize('Hello World.'))
+print('---TRAIN STATISTICS---')
+preprocess1(train_set_label,train_set_text,new_train_file)
+print('\n---DEV STATISTICS---')
+preprocess1(dev_set_label,dev_set_text,new_dev_file)
+print('\n---TEST STATISTICS---')
+preprocess_2(test_set_text,new_test_file)

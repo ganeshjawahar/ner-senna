@@ -77,7 +77,7 @@ function utils.processSentence(config,sentence)
 	for _,word in ipairs(utils.getNgrams(sentence,1,pad)) do
 		config.total_count=config.total_count+1
 
-		word=utils.splitByChar(word,'$$$')[1]
+		word=utils.splitByChar(word,'%$%$%$')[1]
 
 		if config.to_lower==1 then
 			word=word:lower()
