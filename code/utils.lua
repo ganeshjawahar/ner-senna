@@ -114,7 +114,7 @@ function utils.getFullInputTensors(config,sentence)
 	local wordTensor=utils.getWordTensor(config,words)
 	for i,word in ipairs(words) do
 		-- Get word and label
-		local content=utils.splitByChar(word,'$$$')
+		local content=utils.splitByChar(word,'%$%$%$')
 		word=content[1]
 		local label=nil
 		if content[2]==nil then 
