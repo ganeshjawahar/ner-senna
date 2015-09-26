@@ -5,7 +5,6 @@ R. Collobert, J. Weston, L. Bottou, M. Karlen, K. Kavukcuoglu and P. Kuksa. Natu
 
 This code is tuned for identifying chemical entity mention in patents (task specified in http://www.biocreative.org/tasks/biocreative-v/cemp-detailed-task-description/)
 <br />
-<br />
 
 *To execute it,* <br />
 **cd code/** <br />
