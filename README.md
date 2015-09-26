@@ -5,8 +5,19 @@ R. Collobert, J. Weston, L. Bottou, M. Karlen, K. Kavukcuoglu and P. Kuksa. Natu
 
 This code is tuned for identifying chemical entity mention in patents (task specified in http://www.biocreative.org/tasks/biocreative-v/cemp-detailed-task-description/)
 
-Deep Neural Network - Specifications
-Approach: Sentence-based (using convolution)
-Pooling used: Max-pooling
-Loss function: Maximizing log likelihood
-Optimization: Stochastic Gradient Descent (SGD)
+To execute it,
+cd code/
+th main.lua
+
+To get help of configuruable parameters of the model,
+th main.lua -help
+
+Prerequisites to run:
+1. Torch 7
+2. nn
+3. optim
+4. xlua
+5. cunn (if you are running in a gpu)
+Packages [2-6] can be installed using Luarocks.
+For examples, to install nn,
+luarocks install nn

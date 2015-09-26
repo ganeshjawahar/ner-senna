@@ -34,6 +34,10 @@ function Senna:__init(config)
 
 	-- build the net.
     self:build_model()
+
+    if self.gpu==1 then
+    	self:cuda()
+    end
 end
 
 function Senna:train()
@@ -180,4 +184,11 @@ function Senna:build_model(config)
 	self.model:add(nn.SoftMax())
 	self.criterion=nn.ClassNLLCriterion()	
 	self.label_tensors=torch.Tensor(self.batch_size,1)
+end
+
+function Senna:cuda()
+	require 'cunn'
+	self.model:cuda()
+	self.criterion:cuda()
+	self.label_tensors:cuda()
 end
