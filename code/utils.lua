@@ -59,7 +59,7 @@ end
 -- Function to get all ngrams
 function utils.getNgrams(doc,n,pad)
 	local res={}
-	local tokens=utils.padTokens(utils.splitByChar(doc,' '),pad)
+	local tokens=utils.padTokens(utils.splitByChar(doc,'\t'),pad)
 	for i=1,(#tokens-n+1) do
 		local word=''
 		for j=i,(i+(n-1)) do
@@ -73,7 +73,7 @@ end
 
 -- Function to process a sentence to build vocab
 function utils.processSentence(config,sentence)
-	local pad=(config.wwin/2)
+	local pad=0
 	for _,word in ipairs(utils.getNgrams(sentence,1,pad)) do
 		config.total_count=config.total_count+1
 
@@ -106,37 +106,6 @@ function utils.getWordTensor(config,words)
 	return wordTensor
 end
 
--- Function to get input tensors.
-function utils.getFullInputTensors(config,sentence)
-	local tensors={}
-	local pad=(config.wwin/2)
-	local words=utils.getNgrams(sentence,1,pad)
-	local wordTensor=utils.getWordTensor(config,words)
-	for i,word in ipairs(words) do
-		-- Get word and label
-		local content=utils.splitByChar(word,'%$%$%$')
-		word=content[1]
-		local label=nil
-		if content[2]==nil then 
-			label=1
-		elseif content[2]=='I' then
-			label=2
-		else
-			label=1
-		end
-		if config.to_lower==1 then
-			word=word:lower()
-		end
-		local labelTensor=torch.Tensor(1):fill(label)
-		local posTensor=torch.Tensor(#words,1)
-		for j=1,#words do
-			posTensor[j]=math.abs(j-i)
-		end
-		table.insert(tensors,{{wordTensor,posTensor},labelTensor})
-	end
-	return tensors
-end
-
 -- Function to build vocabulary from the corpus
 function utils.buildVocab(config)
 	print('Building vocabulary...')
@@ -146,21 +115,15 @@ function utils.buildVocab(config)
 	-- Fill the vocabulary frequency map
 	config.total_count=0
 	config.corpus_size=0
-	config.corpus_text={}
 	while true do
 		local pid=fptr:read()
 		if pid==nil then
 			break
 		end
+		local title=fptr:read()
+		utils.processSentence(config,title)
 		local abstract=fptr:read()
 		utils.processSentence(config,abstract)
-		table.insert(config.corpus_text,abstract)
-		local noOfSent=tonumber(fptr:read())
-		for i=1,noOfSent do
-			local sentence=fptr:read()
-			utils.processSentence(config,sentence)
-			table.insert(config.corpus_text,sentence)
-		end
 	end
 	fptr.close()
 
@@ -177,69 +140,133 @@ function utils.buildVocab(config)
 	-- Add unknown word
 	config.vocab['<UK>']=1
 	config.index2word[#config.index2word+1]='<UK>'
-	config.word2index['<UK>']=#config.index2word
+	config.word2index['<UK>']= #config.index2word
 	config.vocab_size= #config.index2word
 
 	print(string.format("%d words, %d documents processed in %.2f seconds.",config.total_count,config.corpus_size,sys.clock()-start))
 	print(string.format("Vocab size after eliminating words occuring less than %d times: %d",config.min_freq,config.vocab_size))
 end
 
--- Function to load dev corpus
-function utils.loadDevCorpus(config)
-	local fptr=io.open(config.dev_file,'r')
-	config.dev_text={}
+-- Function to get input tensors.
+function utils.getFullInputTensors(config,sentence)
+	local tensors={}
+	local pad=(config.wwin/2)
+	local words=utils.getNgrams(sentence,1,pad)
+	local wordTensor=utils.getWordTensor(config,words)
+	local posLabTensors={}
+	if config.gpu==1 then
+		wordTensor=wordTensor:cuda()
+	end
+	for i,word in ipairs(words) do
+		-- Get word and label
+		local content=utils.splitByChar(word,'%$%$%$')
+		local label=nil
+		if content[4]=='I' then
+			label=2
+		else
+			label=1
+		end
+		local labelTensor=torch.Tensor(1):fill(label)
+		local posTensor=torch.Tensor(#words,1)
+		for j=1,#words do
+			posTensor[j]=math.abs(j-i)
+		end
+		if config.gpu==1 then
+			wordTensor=wordTensor:cuda()
+			posTensor=posTensor:cuda()
+			labelTensor=labelTensor:cuda()
+		end
+		table.insert(posLabTensors,{posTensor,labelTensor})
+	end
+	return wordTensor,posLabTensors
+end
+
+-- Function to load input and target tensors.
+function utils.loadDataTensors(config) 
+	-- load train set tensors
+	local start=sys.clock()
+	config.train_word_tensors={}
+	config.train_pos_lab_tensors={}
+	local fptr=io.open(config.train_file,'r')
 	while true do
 		local pid=fptr:read()
 		if pid==nil then
 			break
 		end
+		local title=fptr:read()
+		local wordTensor,posLabTensors=utils.getFullInputTensors(config,title)
+		table.insert(config.train_word_tensors,wordTensor)
+		table.insert(config.train_pos_lab_tensors,posLabTensors)
 		local abstract=fptr:read()
-		table.insert(config.dev_text,abstract)
-		local noOfSent=tonumber(fptr:read())
-		for i=1,noOfSent do
-			local sentence=fptr:read()
-			table.insert(config.dev_text,sentence)
-		end
+		local wordTensor,posLabTensors=utils.getFullInputTensors(config,abstract)
+		table.insert(config.train_word_tensors,wordTensor)
+		table.insert(config.train_pos_lab_tensors,posLabTensors)
 	end
 	fptr.close()
-end
-
--- Function to load test corpus
-function utils.loadTestCorpus(config)
-	local fptr=io.open(config.test_file,'r')
-	config.test_text={}
+	print(string.format("Training tensors loaded in %.2f seconds.",sys.clock()-start))
+	-- load dev set tensors
+	start=sys.clock()
+	config.dev_word_tensors={}
+	config.dev_pos_lab_tensors={}
+	local fptr=io.open(config.dev_file,'r')
 	while true do
 		local pid=fptr:read()
 		if pid==nil then
 			break
 		end
+		local title=fptr:read()
+		local wordTensor,posLabTensors=utils.getFullInputTensors(config,title)
+		table.insert(config.dev_word_tensors,wordTensor)
+		table.insert(config.dev_pos_lab_tensors,posLabTensors)
 		local abstract=fptr:read()
-		utils.processSentence(config,abstract)
-		local noOfSent=tonumber(fptr:read())
-		for i=1,noOfSent do
-			local sentence=fptr:read()
-			table.insert(config.test_text,sentence)
-		end
+		local wordTensor,posLabTensors=utils.getFullInputTensors(config,abstract)
+		table.insert(config.dev_word_tensors,wordTensor)
+		table.insert(config.dev_pos_lab_tensors,posLabTensors)
 	end
-	fptr:close()
+	fptr.close()
+	print(string.format("Dev. tensors loaded in %.2f seconds.",sys.clock()-start))
+	-- load test set tensors
+	start=sys.clock()
+	config.test_word_tensors={}
+	config.test_pos_lab_tensors={}
+	local fptr=io.open(config.test_file,'r')
+	while true do
+		local pid=fptr:read()
+		if pid==nil then
+			break
+		end
+		local title=fptr:read()
+		local wordTensor,posLabTensors=utils.getFullInputTensors(config,title)
+		table.insert(config.test_word_tensors,wordTensor)
+		table.insert(config.test_pos_lab_tensors,posLabTensors)
+		local abstract=fptr:read()
+		local wordTensor,posLabTensors=utils.getFullInputTensors(config,abstract)
+		table.insert(config.test_word_tensors,wordTensor)
+		table.insert(config.test_pos_lab_tensors,posLabTensors)
+	end
+	fptr.close()
+	print(string.format("Test tensors loaded in %.2f seconds.",sys.clock()-start))
 end
 
--- Function to find predicted class
-function utils.argmax(v)
-	local idx=1
-	local max=v[1]
-	for i=2,v:size(1) do
-		if v[i]>max then
-			max=v[i]
-			idx=i
+-- Function to initalize word weights
+function utils.initWordWeights(config)
+	print('initializing the pre-trained embeddings...')
+	local start=sys.clock()
+	local ic=0
+	for line in io.lines(config.pre_train_embeddings) do
+		local content=utils.splitByChar(line,' ')
+		local word=content[1]
+		if config.word2index[word]~=nil then
+			local tensor=torch.Tensor(#content-1)
+			for i=2,#content do
+				tensor[i-1]=tonumber(content[i])
+			end
+			config.word_vecs.weight[config.word2index[word]]=tensor
+			ic=ic+1
 		end
 	end
-	return idx
-end
-
--- Function to find accuracy
-function utils.accuracy(pred,gold)
-	return torch.eq(pred,gold):sum()/pred:size(1)
+	print(string.format("%d out of %d words initialized.",ic,#config.index2word))
+	print(string.format("Done in %.2f seconds.",sys.clock()-start))
 end
 
 return utils
